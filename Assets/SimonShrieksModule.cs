@@ -278,4 +278,14 @@ public class SimonShrieksModule : MonoBehaviour
             }
         }
     }
+
+	private IEnumerator TwitchHandleForcedSolve()
+	{
+		yield return null;
+		while (_stage < 3)
+		{
+			Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
+			yield return new WaitForSeconds(0.4f);
+		}
+	}
 }
