@@ -226,4 +226,48 @@ public class SimonShrieksModule : MonoBehaviour
         Lights[ix].enabled = false;
         yield return new WaitForSeconds(.1f);
     }
+
+#pragma warning disable 414
+	private string TwitchHelpMessage = @"Press the correct colors for each round with “!{0} press White Blue Cyan Red” or “!{0} W B C R”. Permissible colors are: Red, Yellow, Green, Cyan, Blue, White, Magenta";
+#pragma warning restore 414
+
+	private IEnumerator ProcessTwitchCommand(string command)
+	{
+		var pieces = command.Trim().ToLowerInvariant().Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
+
+		var buttons = new List<KMSelectable>();
+		var colors = new List<string> {"red", "yellow", "green", "cyan", "blue", "white", "magenta"};
+		foreach (var piece in pieces.Skip(pieces[0] == "press" ? 1 : 0))
+		{
+			var ix = colors.IndexOf(cs =>
+				cs.Equals(piece, StringComparison.InvariantCultureIgnoreCase) || (piece.Length == 1 && cs.StartsWith(piece)));
+			if (ix == -1)
+				yield break;
+			buttons.Add(Buttons[Array.IndexOf(_buttonColors, ix)]);
+		}
+
+		yield return null;
+
+		foreach (var btn in buttons)
+		{
+			btn.OnInteract();
+			if (_stage == 3)
+			{
+				yield return "solve";
+				yield break;
+			}
+
+			yield return new WaitForSeconds(0.4f);
+		}
+	}
+
+	private IEnumerator TwitchHandleForcedSolve()
+	{
+		yield return null;
+		while (_stage < 3)
+		{
+			Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
+			yield return new WaitForSeconds(0.4f);
+		}
+	}
 }
