@@ -252,30 +252,30 @@ public class SimonShrieksModule : MonoBehaviour
     {
         var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-        if (pieces.Length > 1 && pieces[0] == "press")
+        var skip = 0;
+        if (pieces.Length > 0 && pieces[0] == "press")
+            skip = 1;
+
+        var buttons = new List<KMSelectable>();
+        foreach (var piece in pieces.Skip(skip))
         {
-            var buttons = new List<KMSelectable>();
-            foreach (var piece in pieces.Skip(1))
+            var ix = _tpColorNames.IndexOf(cs => cs.Equals(piece, StringComparison.InvariantCultureIgnoreCase) || (piece.Length == 1 && cs.StartsWith(piece, StringComparison.InvariantCultureIgnoreCase)));
+            if (ix == -1)
+                yield break;
+            buttons.Add(Buttons[Array.IndexOf(_buttonColors, ix)]);
+        }
+
+        yield return null;
+
+        foreach (var btn in buttons)
+        {
+            btn.OnInteract();
+            if (_stage >= 3)
             {
-                var ix = _tpColorNames.IndexOf(cs => cs.Equals(piece, StringComparison.InvariantCultureIgnoreCase) || (piece.Length == 1 && cs.StartsWith(piece, StringComparison.InvariantCultureIgnoreCase)));
-                if (ix == -1)
-                    yield break;
-
-                buttons.Add(Buttons[Array.IndexOf(_buttonColors, ix)]);
+                yield return "solve";
+                yield break;
             }
-
-            yield return null;
-
-            foreach (var btn in buttons)
-            {
-                btn.OnInteract();
-                if (_stage >= 3)
-                {
-                    yield return "solve";
-                    yield break;
-                }
-                yield return new WaitForSeconds(.4f);
-            }
+            yield return new WaitForSeconds(.4f);
         }
     }
 }
