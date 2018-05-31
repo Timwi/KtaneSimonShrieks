@@ -28,6 +28,8 @@ public class SimonShrieksModule : MonoBehaviour
     private int _subprogress;
     private int _arrow;
     private int _stage;
+    private bool _makeSounds;
+    private Coroutine _blinker;
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
@@ -63,11 +65,13 @@ public class SimonShrieksModule : MonoBehaviour
         Arrow.localEulerAngles = new Vector3(0, -13 + 360f / 7 * (_arrow + 1), 0);
 
         setStage(0);
-        StartCoroutine(flashing());
+        runBlinker(.1f);
     }
 
     private void setStage(int newStage)
     {
+        // Leds[_stage].material = LitLed;
+
         _stage = newStage;
         _subprogress = 0;
 
@@ -118,48 +122,108 @@ public class SimonShrieksModule : MonoBehaviour
             firstOccurrence[v1] < firstOccurrence[v2] ? -1 : 0);
 
         Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} colors to press: {2}", _moduleId, _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "));
+        startBlinker(1f);
     }
 
-    private KMSelectable.OnInteractHandler getButtonPressHandler(int i)
+    private KMSelectable.OnInteractHandler getButtonPressHandler(int ix)
     {
         return delegate
         {
-            Audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Buttons[i].transform);
-            Buttons[i].AddInteractionPunch(.4f);
+            if (_stage == 3)
+                return false;
 
-            if (_colorsToPress[_subprogress] == _buttonColors[i])
+            Buttons[ix].AddInteractionPunch();
+
+            _makeSounds = true;
+            CancelInvoke("startBlinker");
+
+            if (_buttonColors[ix] != _colorsToPress[_subprogress])
             {
-                Debug.LogFormat(@"[Simon Shrieks #{0}] Pressing {1} was correct.", _moduleId, _buttonColors[i]);
-                _subprogress++;
-                if (_subprogress == _colorsToPress.Length)
-                    setStage(_stage + 1);
+                Debug.LogFormat("[Simon Shrieks #{3}] Expected {0}, but you pressed {1}. Input reset. Now at stage {2} key 1.", _colorNames[_colorsToPress[_subprogress]], _colorNames[_buttonColors[ix]], _stage + 1, _moduleId);
+                Module.HandleStrike();
+                _subprogress = 0;
+                startBlinker(1.5f);
             }
             else
             {
-                Debug.LogFormat(@"[Simon Shrieks #{0}] You pressed {1} when I expected {2}.", _moduleId, _buttonColors[i], _colorsToPress[_subprogress]);
-                Module.HandleStrike();
+                _subprogress++;
+                var logStage = false;
+                if (_subprogress == _colorsToPress.Length)
+                {
+                    setStage(_stage + 1);
+                    logStage = true;
+                }
+                else
+                    startBlinker(5f);
+
+                if (_stage < 3)
+                {
+                    Debug.LogFormat("[Simon Shrieks #{3}] Pressing {0} was correct; now at stage {1} key {2}.", _colorNames[_buttonColors[ix]], _stage + 1, _subprogress + 1, _moduleId);
+                    if (logStage)
+                        logCurrentStage();
+                }
+                else
+                    Debug.LogFormat("[Simon Shrieks #{1}] Pressing {0} was correct; module solved.", _colorNames[_buttonColors[ix]], _moduleId);
             }
 
+            StartCoroutine(flashUpOne(ix));
             return false;
         };
     }
 
-    private IEnumerator flashing()
+    private void logCurrentStage()
     {
-        for (int i = 0; i < Lights.Length; i++)
-            Lights[i].enabled = false;
+        Debug.LogFormat("[Simon Shrieks #{2}] Stage {0} sequence: {1}", _stage + 1, Enumerable.Range(0, 4 + 2 * _stage).Select(ix => _colorNames[_flashingButtons[ix]]).JoinString(", "), _moduleId);
+        Debug.LogFormat("[Simon Shrieks #{2}] Stage {0} expected keypresses: {1}", _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "), _moduleId);
+    }
 
+    private void startBlinker(float delay)
+    {
+        if (_blinker != null)
+            StopCoroutine(_blinker);
+        foreach (var light in Lights)
+            light.enabled = false;
+        _blinker = StartCoroutine(runBlinker(delay));
+    }
+
+    private void startBlinker()
+    {
+        if (_blinker != null)
+            StopCoroutine(_blinker);
+        _blinker = StartCoroutine(runBlinker());
+    }
+
+    private IEnumerator runBlinker(float delay = 0)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (_subprogress != 0)
+        {
+            Debug.LogFormat("[Simon Shrieks #{1}] Waited too long; input reset. Now at stage {0} key 1.", _stage + 1, _moduleId);
+            _subprogress = 0;
+        }
         while (_stage < 3)
         {
-            for (int i = 0; _stage < 3 && i < _stage * 2 + 4; i++)
+            for (int i = 0; i < _stage * 2 + 4; i++)
             {
-                Lights[_flashingButtons[i]].enabled = true;
-                yield return new WaitForSeconds(.7f);
-                Lights[_flashingButtons[i]].enabled = false;
+                var ix = _flashingButtons[i];
+                if (_makeSounds)
+                    Audio.PlaySoundAtTransform("lightup" + ix, transform);
+                Lights[ix].enabled = true;
+                yield return new WaitForSeconds(.3f);
+                Lights[ix].enabled = false;
                 yield return new WaitForSeconds(.1f);
             }
-
-            yield return new WaitForSeconds(1.2f);
+            yield return new WaitForSeconds(2.5f);
         }
+    }
+
+    private IEnumerator flashUpOne(int ix)
+    {
+        Audio.PlaySoundAtTransform("lightup" + ix, Buttons[ix].transform);
+        Lights[ix].enabled = true;
+        yield return new WaitForSeconds(.7f);
+        Lights[ix].enabled = false;
+        yield return new WaitForSeconds(.1f);
     }
 }
