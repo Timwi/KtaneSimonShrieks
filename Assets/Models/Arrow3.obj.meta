@@ -1,17 +1,17 @@
 fileFormatVersion: 2
-guid: b17ff04d7667194429dd63a22a499e0d
-timeCreated: 1527792761
+guid: 8d68ceeb17e7e3f46aa74b565c8ff7a2
+timeCreated: 1527804901
 licenseType: Free
 ModelImporter:
   serializedVersion: 21
   fileIDToRecycleName:
-    100000: Arrow
+    100000: Arrow3
     100002: //RootNode
-    400000: Arrow
+    400000: Arrow3
     400002: //RootNode
-    2300000: Arrow
-    3300000: Arrow
-    4300000: Arrow
+    2300000: Arrow3
+    3300000: Arrow3
+    4300000: Arrow3
   materials:
     importMaterials: 1
     materialName: 0

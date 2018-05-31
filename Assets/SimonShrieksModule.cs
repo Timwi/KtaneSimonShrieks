@@ -20,7 +20,8 @@ public class SimonShrieksModule : MonoBehaviour
     public KMSelectable[] Buttons;
     public Material[] ButtonColors;
     public Light[] Lights;
-    public Transform Arrow;
+    public MeshFilter Arrow;
+    public Mesh[] StageMeshes;
 
     private int[] _buttonColors;
     private int[] _flashingButtons;
@@ -35,6 +36,7 @@ public class SimonShrieksModule : MonoBehaviour
     private int _moduleId;
 
     private static readonly string _colorNames = "RYGCBWM";
+    private static readonly string[] _tpColorNames = new[] { "Red", "Yellow", "Green", "Cyan", "Blue", "White", "Magenta" };
     private static readonly string[] _grid = new[]
     {
         "GMCBYRCYBWR",
@@ -62,7 +64,7 @@ public class SimonShrieksModule : MonoBehaviour
         }
 
         _arrow = Rnd.Range(0, 7);
-        Arrow.localEulerAngles = new Vector3(0, -13 + 360f / 7 * (_arrow + 1), 0);
+        Arrow.transform.localEulerAngles = new Vector3(0, -13 + 360f / 7 * (_arrow + 1), 0);
 
         setStage(0);
         runBlinker(.1f);
@@ -70,16 +72,16 @@ public class SimonShrieksModule : MonoBehaviour
 
     private void setStage(int newStage)
     {
-        // Leds[_stage].material = LitLed;
-
         _stage = newStage;
         _subprogress = 0;
 
         if (_stage == 3)
         {
-            Module.HandlePass();
+            Arrow.gameObject.SetActive(false);
+            StartCoroutine(victory());
             return;
         }
+        Arrow.mesh = StageMeshes[newStage];
 
         var xs = new[] { 2, 8, 2, 8, 2, 8, 5 };
         var ys = new[] { 2, 2, 8, 8, 5, 5, 5 };
@@ -123,6 +125,21 @@ public class SimonShrieksModule : MonoBehaviour
 
         Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} colors to press: {2}", _moduleId, _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "));
         startBlinker(1f);
+    }
+
+    private IEnumerator victory()
+    {
+        yield return new WaitForSeconds(.25f);
+
+        for (int i = 0; i < 14; i++)
+        {
+            var ix = (i + 1) % 7;
+            Audio.PlaySoundAtTransform("lightup" + (6 - i % 7), Buttons[ix].transform);
+            Lights[ix].enabled = true;
+            yield return new WaitForSeconds(.1f);
+            Lights[ix].enabled = false;
+        }
+        Module.HandlePass();
     }
 
     private KMSelectable.OnInteractHandler getButtonPressHandler(int ix)
@@ -222,8 +239,43 @@ public class SimonShrieksModule : MonoBehaviour
     {
         Audio.PlaySoundAtTransform("lightup" + ix, Buttons[ix].transform);
         Lights[ix].enabled = true;
-        yield return new WaitForSeconds(.7f);
+        yield return new WaitForSeconds(.5f);
         Lights[ix].enabled = false;
         yield return new WaitForSeconds(.1f);
+    }
+
+#pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"Press the correct colors for each round with “!{0} press Blue Yellow Magenta” or “!{0} B Y M”. Permissible colors are: Red, Yellow, Green, Cyan, Blue, White, Magenta.";
+#pragma warning restore 414
+
+    private IEnumerator ProcessTwitchCommand(string command)
+    {
+        var pieces = command.Trim().ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (pieces.Length > 1 && pieces[0] == "press")
+        {
+            var buttons = new List<KMSelectable>();
+            foreach (var piece in pieces.Skip(1))
+            {
+                var ix = _tpColorNames.IndexOf(cs => cs.Equals(piece, StringComparison.InvariantCultureIgnoreCase) || (piece.Length == 1 && cs.StartsWith(piece, StringComparison.InvariantCultureIgnoreCase)));
+                if (ix == -1)
+                    yield break;
+
+                buttons.Add(Buttons[Array.IndexOf(_buttonColors, ix)]);
+            }
+
+            yield return null;
+
+            foreach (var btn in buttons)
+            {
+                btn.OnInteract();
+                if (_stage >= 3)
+                {
+                    yield return "solve";
+                    yield break;
+                }
+                yield return new WaitForSeconds(.4f);
+            }
+        }
     }
 }
