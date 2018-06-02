@@ -31,6 +31,7 @@ public class SimonShrieksModule : MonoBehaviour
     private int _stage;
     private bool _makeSounds;
     private Coroutine _blinker;
+    private string _journey;    // for logging only
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
@@ -67,6 +68,7 @@ public class SimonShrieksModule : MonoBehaviour
         Arrow.transform.localEulerAngles = new Vector3(0, -13 + 360f / 7 * (_arrow + 1), 0);
 
         setStage(0);
+        logCurrentStage();
         runBlinker(.1f);
     }
 
@@ -100,7 +102,7 @@ public class SimonShrieksModule : MonoBehaviour
                 cy += sy;
             journey.AppendFormat(" → {0}/{1}", cx, cy);
         }
-        Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} square center: {2}", _moduleId, _stage + 1, journey.ToString());
+        _journey = journey.ToString();
 
         var countColors = new int[7];
         var firstOccurrence = new int[7];
@@ -123,7 +125,6 @@ public class SimonShrieksModule : MonoBehaviour
             firstOccurrence[v1] > firstOccurrence[v2] ? 1 :
             firstOccurrence[v1] < firstOccurrence[v2] ? -1 : 0);
 
-        Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} colors to press: {2}", _moduleId, _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "));
         startBlinker(1f);
     }
 
@@ -190,8 +191,9 @@ public class SimonShrieksModule : MonoBehaviour
 
     private void logCurrentStage()
     {
-        Debug.LogFormat("[Simon Shrieks #{2}] Stage {0} sequence: {1}", _stage + 1, Enumerable.Range(0, 4 + 2 * _stage).Select(ix => _colorNames[_flashingButtons[ix]]).JoinString(", "), _moduleId);
-        Debug.LogFormat("[Simon Shrieks #{2}] Stage {0} expected keypresses: {1}", _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "), _moduleId);
+        Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} flashing buttons (counting clockwise from the arrow): {2}", _moduleId, _stage + 1, _flashingButtons.Take(_stage * 2 + 4).Select(i => (i + 7 - _arrow) % 7).JoinString(", "));
+        Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} square center: {2}", _moduleId, _stage + 1, _journey);
+        Debug.LogFormat(@"[Simon Shrieks #{0}] Stage {1} colors to press: {2}", _moduleId, _stage + 1, _colorsToPress.Select(ix => _colorNames[ix]).JoinString(", "));
     }
 
     private void startBlinker(float delay)
@@ -279,13 +281,13 @@ public class SimonShrieksModule : MonoBehaviour
         }
     }
 
-	private IEnumerator TwitchHandleForcedSolve()
-	{
-		yield return null;
-		while (_stage < 3)
-		{
-			Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
-			yield return new WaitForSeconds(0.4f);
-		}
-	}
+    private IEnumerator TwitchHandleForcedSolve()
+    {
+        yield return null;
+        while (_stage < 3)
+        {
+            Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
+            yield return new WaitForSeconds(0.4f);
+        }
+    }
 }
