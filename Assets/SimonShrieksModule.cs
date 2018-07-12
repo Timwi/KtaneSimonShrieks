@@ -147,15 +147,16 @@ public class SimonShrieksModule : MonoBehaviour
     {
         return delegate
         {
-            if (_stage == 3)
-                return false;
-
             Buttons[ix].AddInteractionPunch();
 
             _makeSounds = true;
             CancelInvoke("startBlinker");
 
-            if (_buttonColors[ix] != _colorsToPress[_subprogress])
+            if (_stage == 3)
+            {
+                // Do nothing (module is solved), but still create sounds and flashes
+            }
+            else if (_buttonColors[ix] != _colorsToPress[_subprogress])
             {
                 Debug.LogFormat("[Simon Shrieks #{3}] Expected {0}, but you pressed {1}. Input reset. Now at stage {2} key 1.", _colorNames[_colorsToPress[_subprogress]], _colorNames[_buttonColors[ix]], _stage + 1, _moduleId);
                 Module.HandleStrike();
