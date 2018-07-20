@@ -70,6 +70,10 @@ public class SimonShrieksModule : MonoBehaviour
         setStage(0);
         logCurrentStage();
         runBlinker(.1f);
+
+        float scalar = transform.lossyScale.x;
+        foreach (Light light in Lights)
+            light.range *= scalar;
     }
 
     private void setStage(int newStage)
