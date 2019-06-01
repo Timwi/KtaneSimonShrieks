@@ -93,19 +93,19 @@ public class SimonShrieksModule : MonoBehaviour
         var xs = new[] { 2, 8, 2, 8, 2, 8, 5 };
         var ys = new[] { 2, 2, 8, 8, 5, 5, 5 };
 
-        int cx = xs[(_flashingButtons[0] + 7 - _arrow) % 7], cy = ys[(_flashingButtons[0] + 7 - _arrow) % 7];
+        int curX = xs[(_flashingButtons[0] + 7 - _arrow) % 7], curY = ys[(_flashingButtons[0] + 7 - _arrow) % 7];
         var journey = new StringBuilder();
-        journey.AppendFormat("{0}/{1}", cx, cy);
+        journey.AppendFormat("{0}/{1}", curX, curY);
         for (int i = 1; i < _stage * 2 + 4; i++)
         {
-            int nx = xs[(_flashingButtons[i] + 7 - _arrow) % 7], ny = ys[(_flashingButtons[i] + 7 - _arrow) % 7];
-            int dx = Math.Abs(cx - nx), dy = Math.Abs(cy - ny), sx = Math.Sign(nx - cx), sy = Math.Sign(ny - cy);
+            int targetX = xs[(_flashingButtons[i] + 7 - _arrow) % 7], targetY = ys[(_flashingButtons[i] + 7 - _arrow) % 7];
+            int deltaX = Math.Abs(curX - targetX), deltaY = Math.Abs(curY - targetY), signX = Math.Sign(targetX - curX), signY = Math.Sign(targetY - curY);
 
-            if (dx >= dy)
-                cx += sx;
-            if (dx <= dy)
-                cy += sy;
-            journey.AppendFormat(" → {0}/{1}", cx, cy);
+            if (deltaX >= deltaY)
+                curX += signX;
+            if (deltaX <= deltaY)
+                curY += signY;
+            journey.AppendFormat(" → {0}/{1}", curX, curY);
         }
         _journey = journey.ToString();
 
@@ -116,9 +116,9 @@ public class SimonShrieksModule : MonoBehaviour
         for (int y = 2; y >= -2; y--)
             for (int x = 2; x >= -2; x--)
             {
-                countColors[_colorNames.IndexOf(_grid[cy + y][cx + x])]++;
-                firstOccurrence[_colorNames.IndexOf(_grid[cy + y][cx + x])] = cells;
-                square.Append(_grid[cy + y][cx + x]);
+                countColors[_colorNames.IndexOf(_grid[curY + y][curX + x])]++;
+                firstOccurrence[_colorNames.IndexOf(_grid[curY + y][curX + x])] = cells;
+                square.Append(_grid[curY + y][curX + x]);
                 cells--;
             }
 
