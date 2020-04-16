@@ -299,7 +299,8 @@ public class SimonShrieksModule : MonoBehaviour
         }
         while (!_moduleSolved)
         {
-            
+            yield return true;
+            yield return new WaitForSeconds(.1f);
         }
     }
 }
