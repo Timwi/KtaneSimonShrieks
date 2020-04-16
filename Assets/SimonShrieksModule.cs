@@ -36,6 +36,7 @@ public class SimonShrieksModule : MonoBehaviour
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
+    private bool _moduleSolved;
 
     private static readonly string _colorNames = "RYGCBWM";
     private static readonly string[] _tpColorNames = new[] { "Red", "Yellow", "Green", "Cyan", "Blue", "White", "Magenta" };
@@ -146,6 +147,7 @@ public class SimonShrieksModule : MonoBehaviour
             Lights[ix].enabled = false;
         }
         Module.HandlePass();
+        _moduleSolved = true;
     }
 
     private KMSelectable.OnInteractHandler getButtonPressHandler(int ix)
@@ -294,6 +296,10 @@ public class SimonShrieksModule : MonoBehaviour
         {
             Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
             yield return new WaitForSeconds(0.4f);
+        }
+        while (!_moduleSolved)
+        {
+            
         }
     }
 }
