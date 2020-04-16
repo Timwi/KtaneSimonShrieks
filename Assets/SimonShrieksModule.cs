@@ -33,6 +33,7 @@ public class SimonShrieksModule : MonoBehaviour
     private bool _makeSounds;
     private Coroutine _blinker;
     private string _journey;    // for logging only
+    private bool _moduleSolved = false;
 
     private static int _moduleIdCounter = 1;
     private int _moduleId;
@@ -146,6 +147,7 @@ public class SimonShrieksModule : MonoBehaviour
             Lights[ix].enabled = false;
         }
         Module.HandlePass();
+        _moduleSolved = true;
     }
 
     private KMSelectable.OnInteractHandler getButtonPressHandler(int ix)
@@ -295,5 +297,7 @@ public class SimonShrieksModule : MonoBehaviour
             Buttons[Array.IndexOf(_buttonColors, _colorsToPress[_subprogress])].OnInteract();
             yield return new WaitForSeconds(0.4f);
         }
+        while (!_moduleSolved)
+            yield return true;
     }
 }
